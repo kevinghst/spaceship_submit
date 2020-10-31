@@ -2,7 +2,7 @@ import numpy as np
 from skimage.draw import polygon_perimeter, line
 from shapely.geometry import Polygon
 from typing import Tuple, Optional
-
+import torch
 
 def _rotation(pts: np.ndarray, theta: float) -> np.ndarray:
     r = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
@@ -74,15 +74,14 @@ def make_data(
     noise_level: float = 0.8,
     no_lines: int = 6,
     image_size: int = 200,
+    classification = False
 ) -> Tuple[np.ndarray, np.ndarray]:
     """ Data generator
-
     Args:
         has_spaceship (bool, optional): Whether a spaceship is included. Defaults to None (randomly sampled).
         noise_level (float, optional): Level of the background noise. Defaults to 0.8.
         no_lines (int, optional): No. of lines for line noise. Defaults to 6.
         image_size (int, optional): Size of generated image. Defaults to 200.
-
     Returns:
         Tuple[np.ndarray, np.ndarray]: Generated Image and the corresponding label
         The label parameters are x, y, yaw, x size, and y size respectively
@@ -93,13 +92,19 @@ def make_data(
         has_spaceship = np.random.choice([True, False], p=(0.8, 0.2))
 
     img = np.zeros(shape=(image_size, image_size))
-    label = np.full(5, np.nan)
+    if classification:
+        label = 0
+    else:
+        label = np.full(5, np.nan)
 
     # draw ship
     if has_spaceship:
 
         params = (_get_pos(image_size), _get_yaw(), _get_size(), _get_l2w(), _get_t2l())
         pts, label = _make_spaceship(*params)
+
+        if classification:
+            label = 1
 
         rr, cc = polygon_perimeter(pts[:, 0], pts[:, 1])
         valid = (rr >= 0) & (rr < image_size) & (cc >= 0) & (cc < image_size)
@@ -147,3 +152,69 @@ def score_iou(ypred: np.ndarray, ytrue: np.ndarray) -> Optional[float]:
         return 0
     else:
         raise NotImplementedError
+
+# My implementation below:
+
+def normalize(label):
+    label[:,0] = (label[:,0] - 10) / (190 - 10)
+    label[:,1] = (label[:,1] - 10) / (190 - 10)
+    label[:,3] = (label[:,3] - 18) / (37 - 18)
+    label[:,4] = (label[:,4] - 18) / (74 - 18)
+
+    sin_ang = np.sin(label[:,2]) / 2 + 0.5
+    cos_ang = np.cos(label[:,2]) / 2 + 0.5
+    cos_ang = np.expand_dims(cos_ang, axis=1)
+    label[:,2] = sin_ang
+    label = np.concatenate((label, cos_ang), axis=1)
+
+    return label
+
+def unnormalize(label):
+    label[0] = label[0] * (190 - 10) + 10
+    label[1] = label[1] * (190 - 10) + 10
+    label[3] = label[3] * (37 - 18) + 18
+    label[4] = label[4] * (74 - 18) + 18
+
+    label[2] = (label[2] - 0.5) * 2
+    label[5] = (label[5] - 0.5) * 2
+
+    label[2] = np.arctan2(label[2], label[5])
+
+    return label[:5]
+
+def make_batch_classification(batch_size):
+    imgs, labels = zip(*[make_data(classification=True) for _ in range(batch_size)])
+    imgs = np.stack(imgs)
+    labels = np.stack(labels)
+
+    imgs = torch.from_numpy(np.asarray(imgs, dtype=np.float32))
+    labels = torch.from_numpy(np.asarray(labels, dtype=np.float32))
+    imgs = torch.unsqueeze(imgs, 1)
+    labels = torch.unsqueeze(labels, 1)
+
+    return imgs, labels
+
+def make_batch(batch_size):
+    # this model can only train on data where a spaceship is guaranteed, this is not true when testing
+    imgs, labels = zip(*[make_data(has_spaceship=True) for _ in range(batch_size)])
+    imgs = np.stack(imgs)
+    labels = np.stack(labels)
+    labels = normalize(labels)
+
+    imgs = torch.from_numpy(np.asarray(imgs, dtype=np.float32))
+    labels = torch.from_numpy(np.asarray(labels, dtype=np.float32))
+    imgs = torch.unsqueeze(imgs, 1)
+
+    return imgs, labels
+
+def adjust_learning_rate(optimizer, epoch):
+    """Sets the learning rate"""
+    lr = 0.001
+    if 20 < epoch <= 30:
+        lr = 0.0001
+    elif 30 < epoch :
+        lr = 0.00001
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+
