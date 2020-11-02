@@ -15,25 +15,21 @@ class ConvNet(nn.Module):
                                 nn.MaxPool2d(2, 2))
         self.L4 = nn.Sequential(nn.Conv2d(128, 128, 3, bias=True, padding=(1, 1)), nn.BatchNorm2d(128), nn.ReLU(),
                                 nn.MaxPool2d(2, 2))
-        self.L5 = nn.Sequential(nn.Conv2d(128, 256, 3, bias=True, padding=(1, 1)), nn.BatchNorm2d(256), nn.ReLU(),
-                                nn.MaxPool2d(2, 2))
-        self.L6 = nn.Sequential(nn.Conv2d(256, 256, 3, bias=True, padding=(1, 1)), nn.BatchNorm2d(256), nn.ReLU(),
-                                nn.MaxPool2d(2, 2))
+        self.L5 = nn.Sequential(nn.Conv2d(128, 256, 3, bias=True, padding=(1, 1)), nn.BatchNorm2d(256), nn.ReLU())
+        self.L6 = nn.Sequential(nn.Conv2d(256, 256, 3, bias=True, padding=(1, 1)), nn.BatchNorm2d(256), nn.ReLU())
+        self.L7 = nn.Sequential(nn.Conv2d(256, 16, 3, bias=True, padding=(1, 1)), nn.BatchNorm2d(16), nn.ReLU())
 
     def forward(self, x):
-        return self.L6(self.L5(self.L4(self.L3(self.L2(self.L1(x))))))  # [64, 256, 3, 3]
+        return self.L7(self.L6(self.L5(self.L4(self.L3(self.L2(self.L1(x)))))))  # torch.Size([64, 16, 12, 12])
 
 
 class Localizer(nn.Module):
     def __init__(self):
         super(Localizer, self).__init__()
-        self.L7 = nn.Sequential(nn.Conv2d(256, 256, 3, bias=True, padding=(1, 1)), nn.BatchNorm2d(256), nn.ReLU(),
-                                nn.MaxPool2d(2, 2))
-        self.FC = nn.Linear(256, 6)
+        self.FC = nn.Sequential(nn.Linear(16 * 12 * 12, 256), nn.ReLU(), nn.Linear(256, 6))
         self.Sig = nn.Sigmoid()
 
     def forward(self, x):
-        x = self.L7(x)
         B, C, H, W = x.shape
         x = x.view(B, C * H * W)
         return self.Sig(self.FC(x))
@@ -42,7 +38,7 @@ class Localizer(nn.Module):
 class Classifier(nn.Module):
     def __init__(self):
         super(Classifier, self).__init__()
-        self.fc1 = nn.Linear(2304, 100)
+        self.fc1 = nn.Linear(16 * 12 * 12, 100)
         self.fc2 = nn.Linear(100, 1)
 
         self.bn = nn.BatchNorm1d(100)

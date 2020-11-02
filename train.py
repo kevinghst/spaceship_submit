@@ -60,8 +60,7 @@ def main():
     criterion1 = nn.MSELoss()
     criterion2 = nn.L1Loss()
 
-
-    epochs = 30
+    epochs = 40
     steps_per_epoch = 3125
     batch_size = 64
 

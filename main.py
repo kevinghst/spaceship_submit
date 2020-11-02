@@ -4,12 +4,17 @@ import torch
 from tqdm import tqdm
 from network import Net
 from helpers import unnormalize
+from torchsummary import summary
+import pdb
 
 def eval():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    np.random.seed(seed=46)
 
     model = Net()
-    checkpoint = torch.load('model.pth.tar', map_location=torch.device('cpu'))
+    path = 'model.pth.tar'
+
+    checkpoint = torch.load(path, map_location=torch.device('cpu'))
     model.load_state_dict(checkpoint)
     model = model.to(device)
     model.eval()
