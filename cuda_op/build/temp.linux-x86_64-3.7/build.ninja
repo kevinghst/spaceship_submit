@@ -1,0 +1,27 @@
+ninja_required_version = 1.3
+cxx = c++
+nvcc = /share/apps/cuda/10.1.105/bin/nvcc
+
+cflags = -pthread -B /scratch/wz1232/anaconda3/compiler_compat -Wl,--sysroot=/ -Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include/torch/csrc/api/include -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include/TH -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include/THC -I/share/apps/cuda/10.1.105/include -I/scratch/wz1232/anaconda3/include/python3.7m -c
+post_cflags = -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=sort_vertices -D_GLIBCXX_USE_CXX11_ABI=0 -std=c++14
+cuda_cflags = -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include/torch/csrc/api/include -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include/TH -I/scratch/wz1232/anaconda3/lib/python3.7/site-packages/torch/include/THC -I/share/apps/cuda/10.1.105/include -I/scratch/wz1232/anaconda3/include/python3.7m -c
+cuda_post_cflags = -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options ''"'"'-fPIC'"'"'' -DTORCH_API_INCLUDE_EXTENSION_H -DTORCH_EXTENSION_NAME=sort_vertices -D_GLIBCXX_USE_CXX11_ABI=0 -gencode=arch=compute_61,code=sm_61 -std=c++14
+ldflags = 
+
+rule compile
+  command = $cxx -MMD -MF $out.d $cflags -c $in -o $out $post_cflags
+  depfile = $out.d
+  deps = gcc
+
+rule cuda_compile
+  command = $nvcc $cuda_cflags -c $in -o $out $cuda_post_cflags
+
+
+
+build /scratch/wz1232/spaceship_submit/cuda_op/build/temp.linux-x86_64-3.7/sort_vert.o: compile /scratch/wz1232/spaceship_submit/cuda_op/sort_vert.cpp
+build /scratch/wz1232/spaceship_submit/cuda_op/build/temp.linux-x86_64-3.7/sort_vert_kernel.o: cuda_compile /scratch/wz1232/spaceship_submit/cuda_op/sort_vert_kernel.cu
+
+
+
+
+

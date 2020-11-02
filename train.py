@@ -12,12 +12,15 @@ import torch.nn as nn
 from torchsummary import summary
 
 from network import Net
-from helpers import make_batch, make_batch_classification, normalize, adjust_learning_rate
+from helpers import make_batch, make_batch_classification, normalize, adjust_learning_rate, unnormalize_tensor
+
+from oriented_iou_loss import cal_diou
 
 
-def train(model, optimizer, epoch, device, steps, batch_size, criterion1, criterion2=None, classification=False):
+def train(model, optimizer, epoch, device, steps, batch_size, criterion, classification=False):
     model.train()
     running_loss = 0.0
+    running_iou = 0.0
 
     for _ in range(0, steps):
         if classification:
@@ -30,10 +33,17 @@ def train(model, optimizer, epoch, device, steps, batch_size, criterion1, criter
 
         output = model(images)
 
-        if criterion2:
-            loss = criterion1(output, target) + criterion2(output, target)
+        if classification:
+            loss = criterion(output, target)
         else:
-            loss = criterion1(output, target)
+            loss, iou = criterion(
+                torch.unsqueeze(unnormalize_tensor(output), 1),
+                torch.unsqueeze(unnormalize_tensor(target), 1),
+                'smallest'
+            )
+            loss = torch.mean(loss)
+            iou = torch.mean(iou)
+            running_iou += iou.item()
 
         optimizer.zero_grad()
         loss.backward()
@@ -43,6 +53,9 @@ def train(model, optimizer, epoch, device, steps, batch_size, criterion1, criter
 
     print(epoch)
     print(running_loss / steps)
+
+    if not classification:
+        print(running_iou / steps)
 
 
 
@@ -57,8 +70,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), eps=1e-07)
 
     cudnn.benchmark = True
-    criterion1 = nn.MSELoss()
-    criterion2 = nn.L1Loss()
+    criterion = cal_diou
 
     epochs = 40
     steps_per_epoch = 3125
@@ -66,7 +78,7 @@ def main():
 
     for epoch in range(0, epochs):
         adjust_learning_rate(optimizer, epoch)
-        train(model, optimizer, epoch, device, steps_per_epoch, batch_size, criterion1, criterion2=criterion2)
+        train(model, optimizer, epoch, device, steps_per_epoch, batch_size, criterion)
 
     # Part II - Apply transfer learning to train pre-trained model to detect whether spaceship exists
     print("Start classification training")
@@ -87,7 +99,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), eps=1e-07)
 
     for epoch in range(epochs):
-        train(model, optimizer, epoch, device, steps_per_epoch, batch_size, criterion, criterion2=None, classification=True)
+        train(model, optimizer, epoch, device, steps_per_epoch, batch_size, criterion, classification=True)
 
     # Save model
     path = F'model.pth.tar'

@@ -182,6 +182,19 @@ def unnormalize(label):
 
     return label[:5]
 
+def unnormalize_tensor(label):
+    p0 = label[:, 0] * (190 - 10) + 10
+    p1 = label[:, 1] * (190 - 10) + 10
+    p2 = label[:, 3] * (37 - 18) + 18
+    p3 = label[:, 4] * (74 - 18) + 18
+
+    sin = (label[:, 2] - 0.5) * 2
+    cos = (label[:, 5] - 0.5) * 2
+
+    p4 = torch.atan2(sin, cos)
+
+    return torch.stack([p0, p1, p2, p3, p4], dim=-1)
+
 def make_batch_classification(batch_size):
     imgs, labels = zip(*[make_data(classification=True) for _ in range(batch_size)])
     imgs = np.stack(imgs)
