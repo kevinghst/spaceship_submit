@@ -1,5 +1,5 @@
 # Spaceship Implementation
-This repository contains implementation/solution to a Computer Vision assignment:
+This repository contains implementation/solution to the following Computer Vision assignment:
 
 **Problem:**
 The goal is to detect spaceships which have been fitted with a cloaking device that makes them less visible. You are expected to use a deep learning model to complete this task. The model will take a single channel image as input and detects the spaceship (if it exists). Not all image will contain a spaceship, but they will contain no more than 1. For any spaceship, the model should predict their bounding box and heading. This can be described using five parameters:
@@ -14,7 +14,7 @@ A sample spaceship image is given in `example.png`.
 The metric for the model is AP at an IOU threshold of 0.7, for at least 1000 random samples, with the default generation parameters (see `main.py`).
 
 **Evaluation Criteria:**
-* Model metric, score as high as you can while being under 2 million trainable parameters. Please streamline the parameters where possible. The average AP for this take-home's submissions is 0.7.
+* Model metric, score as high as you can while being under 2 million trainable parameters. **The average submitted AP for this assignment is 0.7**.
 * Model architecture
 * Loss function
 * Code readability and maintainability, please follow general python conventions
@@ -49,5 +49,7 @@ Then, run train.py
 
 ## Reference
 `plot_examples` and parts of `helpers.py` (code for generating spaceship images) were given by the assignment.
+
 The code for GIoU loss is copied from https://github.com/lilanxiao/Rotated_IoU, and is contained in directory `cuda_op` and files `box_intersection_2d.py`,, `min_enclosing_box.py`, `oriented_iou_loss.py`, `utiles.py`.
+
 The rest of the files  `main.py`, `network.py`, `train.py`, and parts of `helpers.py` are implemented from scratch.
