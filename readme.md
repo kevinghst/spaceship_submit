@@ -14,7 +14,7 @@ A sample spaceship image is given in `example.png`.
 The metric for the model is AP at an IOU threshold of 0.7, for at least 1000 random samples, with the default generation parameters (see `main.py`).
 
 **Evaluation Criteria:**
-* Model metric, score as high as you can while being under 2 million trainable parameters. **The average submitted AP for this assignment is 0.7**.
+* Model metric, score as high as you can while being under 2 million trainable parameters. *The average submitted AP for this assignment is 0.7*.
 * Model architecture
 * Loss function
 * Code readability and maintainability, please follow general python conventions
@@ -50,6 +50,6 @@ Then, run train.py
 ## Reference
 `plot_examples` and parts of `helpers.py` (code for generating spaceship images) were given by the assignment.
 
-The code for GIoU loss is copied from https://github.com/lilanxiao/Rotated_IoU, and is contained in directory `cuda_op` and files `box_intersection_2d.py`,, `min_enclosing_box.py`, `oriented_iou_loss.py`, `utiles.py`.
+The code for GIoU loss is copied from https://github.com/lilanxiao/Rotated_IoU, and is contained in directory `cuda_op` and files `box_intersection_2d.py`, `min_enclosing_box.py`, `oriented_iou_loss.py`, `utiles.py`.
 
 The rest of the files  `main.py`, `network.py`, `train.py`, and parts of `helpers.py` are implemented from scratch.
