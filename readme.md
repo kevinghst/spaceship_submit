@@ -52,4 +52,4 @@ Then, run train.py
 
 The code for GIoU loss is copied from https://github.com/lilanxiao/Rotated_IoU, and is contained in directory `cuda_op` and files `box_intersection_2d.py`, `min_enclosing_box.py`, `oriented_iou_loss.py`, `utiles.py`.
 
-The rest of the files  `main.py`, `network.py`, `train.py`, and parts of `helpers.py` are implemented from scratch.
+`main.py`, `network.py`, `train.py`, and rest of `helpers.py` are implemented from scratch.
